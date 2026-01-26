@@ -1,0 +1,28 @@
+[Page]
+; стартовая страница для программы Spider
+; start_page = ru.wikipedia.org/wiki/Boost
+; start_page = agima.ru/glossary/poiskovyy-robot/
+; start_page = sape.ru/glossary/poiskoviy-robot/
+; start_page = trends.rbc.ru/trends/industry/60c85c599a7947f5776ad409
+; start_page = example.com
+; start_page = maryproject.ru/blog/chto-takoe-poiskovyij-robot/
+start_page = journal.topvisor.com/ru/dictionary/what-is-crawler/
+; start_page = neurohive.io/ru/osnovy-data-science/osnovy-nejronnyh-setej-algoritmy-obuchenie-funkcii-aktivacii-i-poteri/
+
+[Search_settings]
+; настройки для процесса индексации
+search_depth = 2
+min_word_length = 3
+max_word_length = 32
+
+[Process_settings]
+; настройки для пула потоков
+max_threads = 8
+
+[Database]
+; настройки соединения с базой данных
+host=localhost
+port=5432
+dbname=spider_db
+user=postgres
+password=postgres
