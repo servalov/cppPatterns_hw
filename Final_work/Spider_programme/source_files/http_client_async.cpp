@@ -1,4 +1,4 @@
-#include "http_client_async.h"
+п»ї#include "http_client_async.h"
 #include "http_client_async_ssl.h"
 
 session::session(net::io_context& ioc, std::shared_ptr<ssl::context> ctx, readCallback cb) : ioc_(ioc), ctx_(ctx), resolver_(net::make_strand(ioc)), stream_(net::make_strand(ioc)), on_data_received_(std::move(cb))
@@ -11,14 +11,14 @@ void session::run(char const* host, char const* port, char const* target)
     
     last_host_ = host;
     
-    // Подготовка запроса
+    // РџРѕРґРіРѕС‚РѕРІРєР° Р·Р°РїСЂРѕСЃР°
     req_.version(11);
     req_.method(http::verb::get);
     req_.target(target);
     req_.set(http::field::host, host);
     req_.set(http::field::user_agent, "BoostBeastClient2026");
 
-    // Разрешение DNS
+    // Р Р°Р·СЂРµС€РµРЅРёРµ DNS
     resolver_.async_resolve(host, port,
         beast::bind_front_handler(&session::on_resolve, shared_from_this()));
 }
@@ -27,7 +27,7 @@ void session::on_resolve(beast::error_code ec, tcp::resolver::results_type resul
 {
     if (ec) return fail(ec, "resolve");
 
-    // Подключение
+    // РџРѕРґРєР»СЋС‡РµРЅРёРµ
     stream_.async_connect(results,beast::bind_front_handler(&session::on_connect, shared_from_this()));
 }
 
@@ -35,7 +35,7 @@ void session::on_connect(beast::error_code ec, tcp::resolver::results_type::endp
 {
     if (ec) return fail(ec, "connect");
 
-    // Отправка HTTP запроса
+    // РћС‚РїСЂР°РІРєР° HTTP Р·Р°РїСЂРѕСЃР°
     http::async_write(stream_, req_, beast::bind_front_handler(&session::on_write, shared_from_this()));
 }
 
@@ -44,7 +44,7 @@ void session::on_write(beast::error_code ec, std::size_t bytes_transferred)
     boost::ignore_unused(bytes_transferred);
     if (ec) return fail(ec, "write");
 
-    // Чтение ответа
+    // Р§С‚РµРЅРёРµ РѕС‚РІРµС‚Р°
     http::async_read(stream_, buffer_, res_, beast::bind_front_handler(&session::on_read, shared_from_this()));
 }
 
@@ -56,7 +56,7 @@ void session::on_read(beast::error_code ec, std::size_t bytes_transferred)
 
     std::cout<< res_.result_int() << std::endl;
 
-    // Обработка редиректа.Обработка ответов с кодами 3xx
+    // РћР±СЂР°Р±РѕС‚РєР° СЂРµРґРёСЂРµРєС‚Р°.РћР±СЂР°Р±РѕС‚РєР° РѕС‚РІРµС‚РѕРІ СЃ РєРѕРґР°РјРё 3xx
     if (res_.result_int() >= 300 && res_.result_int() < 400 && redirect_limit > 0)
     {
        
@@ -92,7 +92,7 @@ void session::on_read(beast::error_code ec, std::size_t bytes_transferred)
         }
     }
 
-    // Успешная обработка
+    // РЈСЃРїРµС€РЅР°СЏ РѕР±СЂР°Р±РѕС‚РєР°
     if (res_.result_int() >= 200 && res_.result_int() < 300)
     {
         on_data_received_(std::move(res_.body()));
