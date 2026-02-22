@@ -1,13 +1,13 @@
 [Page]
 ; стартовая страница для программы Spider
-; start_page = ru.wikipedia.org/wiki/Boost
-; start_page = agima.ru/glossary/poiskovyy-robot/
-; start_page = sape.ru/glossary/poiskoviy-robot/
-; start_page = trends.rbc.ru/trends/industry/60c85c599a7947f5776ad409
-; start_page = example.com
-; start_page = maryproject.ru/blog/chto-takoe-poiskovyij-robot/
-start_page = journal.topvisor.com/ru/dictionary/what-is-crawler/
-; start_page = neurohive.io/ru/osnovy-data-science/osnovy-nejronnyh-setej-algoritmy-obuchenie-funkcii-aktivacii-i-poteri/
+; start_page = https://ru.wikipedia.org/wiki/Boost
+; start_page = https://agima.ru/glossary/poiskovyy-robot/
+; start_page = https://sape.ru/glossary/poiskoviy-robot/
+; start_page = https://trends.rbc.ru/trends/industry/60c85c599a7947f5776ad409
+; start_page = https://example.com
+; start_page = https://maryproject.ru/blog/chto-takoe-poiskovyij-robot/
+start_page = https://journal.topvisor.com/ru/dictionary/what-is-crawler/
+; start_page = https://neurohive.io/ru/osnovy-data-science/osnovy-nejronnyh-setej-algoritmy-obuchenie-funkcii-aktivacii-i-poteri/
 
 [Search_settings]
 ; настройки для процесса индексации

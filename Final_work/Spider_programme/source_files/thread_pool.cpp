@@ -10,7 +10,7 @@ template <class T> void Safe_queue<T>::push(T func)
 {
 	std::unique_lock<std::mutex> lk(mtx);
 	task_queue.emplace(std::move(func));
-	std::cout << "\n В очередь добавлена новая задача!!!" << std::endl;
+	//std::cout << "\n В очередь добавлена новая задача!!!" << std::endl;
 	lk.unlock();
 	notice.notify_one();
 }
@@ -56,7 +56,8 @@ void Thread_pool::work()
 
 Thread_pool::~Thread_pool()
 {
-	std::cout << "\n Удаление объекта thread_pool:" << std::endl;
+	std::this_thread::sleep_for(std::chrono::milliseconds(500));
+	//std::cout << "\n Удаление объекта thread_pool:" << std::endl;
 	tasks_queue.stop_threads();
 	for (size_t i{}; i < threads_vector.size(); ++i)
 	{
@@ -82,12 +83,3 @@ std::future<void> Thread_pool::submit(type_task task, std::string& url, int& url
 	tasks_queue.push({ std::move(task), url ,url_depth});
 	return result;
 }
-
-
-
-
-
-
-
-
-

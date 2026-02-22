@@ -1,12 +1,13 @@
 ﻿#include <iostream>
 #include "ini_parser.h"
 #include "spider.h"
+#include <windows.h>
 
 int main()
 {
-	setlocale(LC_ALL, "Russian");
+	setlocale(LC_ALL, "Russian"); 
 	SetConsoleOutputCP(1251);
-	
+
 	std::cout << "Поисковый робот Spider (HTTP-клиент)." << std::endl;
 	std::cout << "-----------------------------------------" << std::endl;
 
