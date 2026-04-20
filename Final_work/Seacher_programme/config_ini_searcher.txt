@@ -1,0 +1,16 @@
+[Server]
+; хост и порт сервера
+host=127.0.0.1
+port=12345
+
+[Database]
+; настройки соединения с базой данных
+host=localhost
+port=5432
+dbname=spider_db
+user=postgres
+password=postgres
+
+[Search_settings]
+; число результатов поиска
+search_results = 10

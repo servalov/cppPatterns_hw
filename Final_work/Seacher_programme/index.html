@@ -1,0 +1,20 @@
+<html> 
+<head>
+    <meta charset="UTF-8">
+    <title>Программа-поисковик</title>
+    <style>
+	    h1 {color: #202124; font-size: 24px; margin-bottom: 20px;}
+        input[type="text"] { padding: 8px; width: 500px; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 8px 40px; cursor: pointer; background-color: #007bff; color: white; border: none; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>Запрос пользователя: </h1>
+    <!-- Форма поиска -->
+    <form action="/" method="POST">
+        <input type="text" name="query" placeholder="Введите данные запроса" required>
+        <button type="submit">Найти</button>
+    </form>
+
+</body>
+</html>
