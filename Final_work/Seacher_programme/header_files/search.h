@@ -16,6 +16,8 @@ struct Data
 	std::string password;
 	std::string db_connection;
 	int	search_results;
+	int min_word_length;
+	int max_word_length;
 };
 
 class Search
@@ -26,8 +28,10 @@ private:
 	unsigned short server_port;
 	std::string db_connection;
 	int	search_results;
+	int min_word_length;
+	int max_word_length;
 
-	Data_base* db;
+	Data_base* db{ nullptr };
 
 public:
 	Search(Data ini_data);

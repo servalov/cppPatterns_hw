@@ -81,7 +81,7 @@ void session::on_read(beast::error_code ec, std::size_t bytes_transferred)
                 if (url->scheme() == "https")
                 {
                     auto s = std::make_shared<session_ssl>(ioc_, ctx_, on_data_received_);
-                    s->run(next_host.c_str(), "443", next_target.c_str());
+                    s->run_ssl(next_host.c_str(), "443", next_target.c_str());
                 }
                 else
                 {
@@ -95,15 +95,16 @@ void session::on_read(beast::error_code ec, std::size_t bytes_transferred)
     // Успешная обработка
     if (res_.result_int() >= 200 && res_.result_int() < 300)
     {
-        on_data_received_(std::move(res_.body()));
+        on_data_received_(std::move(res_.body()), res_.result_int());
     }
     else
     {
-        // std::cout << "Error " << res_.result_int() << " (" << res_.result() << ")" << std::endl;
+        res_.body() = {};
+        on_data_received_(std::move(res_.body()), res_.result_int());
+        //std::cout << "Error " << res_.result_int() << " (" << res_.result() << ")" << std::endl;
     }
-
-     //on_data_received_(std::move(res_.body()));
-     stream_.socket().shutdown(tcp::socket::shutdown_both, ec);
+    
+    stream_.socket().shutdown(tcp::socket::shutdown_both, ec);
 }
 
 void session::fail(beast::error_code ec, const char* what)

@@ -9,6 +9,7 @@
 #include "data_base.h"
 #include "html_parser.h"
 #include <memory>
+#include <atomic>
 
 struct Data
 {
@@ -30,17 +31,20 @@ class Spider
 	private:
 		std::string start_url;
 		int	search_depth;
-		
 		int max_threads_num;
-		Thread_pool tpool;
+		int count_task{};
+		
 		std::vector<std::future<void>> results;
 		std::mutex queue_mutex;
+		std::atomic<int> active_tasks{0};                 // счетчик задач
 
 		std::string db_connection;
-		Data_base* db;
+		//Data_base* db;
+		std::unique_ptr<Data_base> db;
 		std::mutex mtx_db;
 
 		Html_parser html_parser;
+		Thread_pool tpool;
 
 	public:
 		Spider(Data ini_data);
@@ -50,9 +54,8 @@ class Spider
 		Spider& operator=(Spider&& other) = delete;		  // оператор перемещающего присваивания
 
 		void work();           // старт программы (добавление адреса в очередь, упаковка задачи)
-		void task(std::string& url, int& url_depth);                            // выполнение задачи потоком
+		void task(std::string& url, int url_depth);       // выполнение задачи потоком
 		void add_url_words_to_db(const std::string& url_str, std::map<std::string, unsigned int>& words);
-
 };
 
 #endif // SPIDER

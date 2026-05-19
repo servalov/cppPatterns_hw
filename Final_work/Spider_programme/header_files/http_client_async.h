@@ -18,7 +18,7 @@ namespace net = boost::asio;
 namespace ssl = net::ssl;
 using tcp = net::ip::tcp;
 
-using readCallback = std::function<void(const std::string&)>;
+using readCallback = std::function<void(const std::string&, int)>;
 
 class session : public std::enable_shared_from_this<session>
 {

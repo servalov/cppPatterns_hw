@@ -3,6 +3,8 @@
 
 #include <pqxx/pqxx>
 #include <iostream>
+#include <set>
+#include <unordered_map>
 
 class Data_base
 {
@@ -19,6 +21,7 @@ public:
 	Data_base(Data_base&& other) noexcept;	                // конструктор перемещения
 	void connect();
 	void CreateDBTable();
+	std::string poisk_url_by_words(const std::set<std::string>& search_words, int search_results);
 };
 
 #endif // DATA_BASE

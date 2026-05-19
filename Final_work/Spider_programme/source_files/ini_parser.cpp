@@ -66,7 +66,6 @@ ini_parcer::ini_parcer(std::string n_file) : name_file{ n_file }
 	{
 		std::cout << "ini-файл " << name_file <<" не загружен !!!"<<std::endl;
 	}
-	
 }
 
 ini_parcer::~ini_parcer()

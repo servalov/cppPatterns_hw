@@ -9,6 +9,8 @@
 #include <boost/locale.hpp>
 #include <windows.h>
 
+
+
 // Класс для парсера кода HTML страницы
 class Html_parser
 {

@@ -1,11 +1,11 @@
 ﻿#include "http_client_async_ssl.h"
 
-session_ssl::session_ssl(net::io_context& ioc, std::shared_ptr<ssl::context> ctx, readCallback cb) : ioc_(ioc), ctx_(ctx), resolver_(net::make_strand(ioc)), on_data_received_(std::move(cb))
+session_ssl::session_ssl(net::io_context& ioc, std::shared_ptr<ssl::context> ctx, readCallback_ssl cb) : ioc_(ioc), ctx_(ctx), resolver_(net::make_strand(ioc)), on_data_received_(std::move(cb))
 {
    
 }
 
-void session_ssl::run(char const* host, char const* port, char const* target)
+void session_ssl::run_ssl(char const* host, char const* port, char const* target)
 {
     last_host_ = host;
     stream_=std::make_unique<beast::ssl_stream<beast::tcp_stream>>(net::make_strand(ioc_),*ctx_);
@@ -23,36 +23,36 @@ void session_ssl::run(char const* host, char const* port, char const* target)
     req_.set(http::field::user_agent, "BoostBeastClient2026");
 
     resolver_.async_resolve(host, port,
-        beast::bind_front_handler(&session_ssl::on_resolve, shared_from_this()));
+        beast::bind_front_handler(&session_ssl::on_resolve_ssl, shared_from_this()));
 }
 
-void session_ssl::on_resolve(beast::error_code ec, tcp::resolver::results_type results)
+void session_ssl::on_resolve_ssl(beast::error_code ec, tcp::resolver::results_type results)
 {
-    if (ec) return; // Обработка ошибки
-    beast::get_lowest_layer(*stream_).async_connect(results,beast::bind_front_handler(&session_ssl::on_connect, shared_from_this()));
+    if (ec) return;   // Обработка ошибки
+    beast::get_lowest_layer(*stream_).async_connect(results,beast::bind_front_handler(&session_ssl::on_connect_ssl, shared_from_this()));
 }
 
-void session_ssl::on_connect(beast::error_code ec, tcp::resolver::results_type::endpoint_type)
+void session_ssl::on_connect_ssl(beast::error_code ec, tcp::resolver::results_type::endpoint_type)
 {
-    if (ec) return; // Обработка ошибки
-    stream_->async_handshake(ssl::stream_base::client,beast::bind_front_handler(&session_ssl::on_handshake, shared_from_this()));
+    if (ec) return;   // Обработка ошибки
+    stream_->async_handshake(ssl::stream_base::client,beast::bind_front_handler(&session_ssl::on_handshake_ssl, shared_from_this()));
 }
 
-void session_ssl::on_handshake(beast::error_code ec)
+void session_ssl::on_handshake_ssl(beast::error_code ec)
 {
-    if (ec) return; // Обработка ошибки
-    http::async_write(*stream_, req_, beast::bind_front_handler(&session_ssl::on_write, shared_from_this()));
+    if (ec) return;   // Обработка ошибки
+    http::async_write(*stream_, req_, beast::bind_front_handler(&session_ssl::on_write_ssl, shared_from_this()));
 }
 
-void session_ssl::on_write(beast::error_code ec, std::size_t bytes_transferred)
+void session_ssl::on_write_ssl(beast::error_code ec, std::size_t bytes_transferred)
 {
     boost::ignore_unused(bytes_transferred);
-    if (ec) return; // Обработка ошибки
-    res_ = {}; // Очищаем старый ответ
-    http::async_read(*stream_, buffer_, res_,beast::bind_front_handler(&session_ssl::on_read, shared_from_this()));
+    if (ec) return;   // Обработка ошибки
+    res_ = {};        // Очищаем старый ответ
+    http::async_read(*stream_, buffer_, res_,beast::bind_front_handler(&session_ssl::on_read_ssl, shared_from_this()));
 }
 
-void session_ssl::on_read(beast::error_code ec, std::size_t bytes_transferred)
+void session_ssl::on_read_ssl(beast::error_code ec, std::size_t bytes_transferred)
 {
     boost::ignore_unused(bytes_transferred);
     if (ec)
@@ -82,7 +82,7 @@ void session_ssl::on_read(beast::error_code ec, std::size_t bytes_transferred)
                 beast::get_lowest_layer(*stream_).close();
 
                 // Перезапуск 
-                this->run(next_host.c_str(), next_port.c_str(), next_target.c_str());
+                this->run_ssl(next_host.c_str(), next_port.c_str(), next_target.c_str());
                 return; 
             }
         }
@@ -91,17 +91,19 @@ void session_ssl::on_read(beast::error_code ec, std::size_t bytes_transferred)
     // Успешная обработка
     if (res_.result_int() >= 200 && res_.result_int() < 300)
     {
-        on_data_received_(std::move(res_.body()));
+        on_data_received_(std::move(res_.body()), res_.result_int());
     }
     else
     {
-       // std::cout << "Error " << res_.result_int() << " (" << res_.result() << ")" << std::endl;
+        res_.body() = {};
+        on_data_received_(std::move(res_.body()), res_.result_int());
+        //std::cout << "Error " << res_.result_int() << " (" << res_.result() << ")" << std::endl;
     }
-    //on_data_received_(std::move(res_.body()));
-    stream_->async_shutdown(beast::bind_front_handler(&session_ssl::on_shutdown, shared_from_this()));
+
+    stream_->async_shutdown(beast::bind_front_handler(&session_ssl::on_shutdown_ssl, shared_from_this()));
 }
 
-void session_ssl::on_shutdown(beast::error_code ec)
+void session_ssl::on_shutdown_ssl(beast::error_code ec)
 {
     boost::ignore_unused(ec);
 }

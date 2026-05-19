@@ -1,5 +1,30 @@
 ﻿#include "html_parser.h"
 
+// Функция кодировки с utf8_to_cp1251
+std::string utf8_to_cp1251(std::string const& utf8)
+{
+	if (!utf8.empty())
+	{
+		int wchlen = MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), utf8.size(), NULL, 0);
+		if (wchlen > 0 && wchlen != 0xFFFD)
+		{
+			std::vector<wchar_t> wbuf(wchlen);
+			int result_u = MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), utf8.size(), &wbuf[0], wchlen);
+			if (!result_u) {
+				throw std::runtime_error("utf8_to_cp1251 cannot convert MultiByteToWideChar!");
+			}
+			std::vector<char> buf(wchlen);
+			int result_c = WideCharToMultiByte(1251, 0, &wbuf[0], wchlen, &buf[0], wchlen, 0, 0);
+			if (!result_c) {
+				throw std::runtime_error("utf8_to_cp1251 cannot convert WideCharToMultiByte!");
+			}
+
+			return std::string(&buf[0], wchlen);
+		}
+	}
+	return std::string();
+}
+
 // Функция кодировки с cp1251_to_utf8
 std::string cp1251_to_utf8(const std::string& cp1251)
 {
@@ -29,31 +54,6 @@ std::string cp1251_to_utf8(const std::string& cp1251)
 	res.append(cres);
 	delete[] cres;
 	return res;
-}
-
-// Функция кодировки с utf8_to_cp1251
-std::string utf8_to_cp1251(std::string const& utf8)
-{
-	if (!utf8.empty())
-	{
-		int wchlen = MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), utf8.size(), NULL, 0);
-		if (wchlen > 0 && wchlen != 0xFFFD)
-		{
-			std::vector<wchar_t> wbuf(wchlen);
-			int result_u = MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), utf8.size(), &wbuf[0], wchlen);
-			if (!result_u) {
-				throw std::runtime_error("utf8_to_cp1251 cannot convert MultiByteToWideChar!");
-			}
-			std::vector<char> buf(wchlen);
-			int result_c = WideCharToMultiByte(1251, 0, &wbuf[0], wchlen, &buf[0], wchlen, 0, 0);
-			if (!result_c) {
-				throw std::runtime_error("utf8_to_cp1251 cannot convert WideCharToMultiByte!");
-			}
-
-			return std::string(&buf[0], wchlen);
-		}
-	}
-	return std::string();
 }
 
 // Функция получения path, где лежит страница
@@ -119,7 +119,6 @@ std::string Html_parser::complete_url(const std::string& in_url, const std::stri
 // Получение ссылок текущей страницы
 std::vector<std::string> Html_parser::get_all_links(const std::string& html_code, const std::string& current_url)
 {
-	std::vector<std::string> result;
 	std::string base = get_base_path(current_url);      // путь, где лежит страница
 
 	// Поиск тегов <a href="...">. Игнорируем регистр (icase).
@@ -147,9 +146,7 @@ std::vector<std::string> Html_parser::get_all_links(const std::string& html_code
 	}
 
 	return std::vector<std::string>(unique_links.begin(), unique_links.end());
-	//result.push_back(full_url);
 
-	return result;
 }
 
 // Получение host и target
@@ -183,6 +180,98 @@ void Html_parser::get_host_target(std::string& new_url, std::string& host, std::
 
 // Индексирование страницы
 std::string Html_parser::html_index(const std::string& html_str)
+{
+	std::string html = html_str;
+
+	std::smatch match;
+	std::string title_str{};
+	static boost::locale::generator gen;
+	static std::locale loc = gen("ru_RU.UTF-8");
+	
+	// 1. Извлечение Title
+	std::regex title_regex("<title>(.*?)</title>", std::regex::icase);
+	if (std::regex_search(html, match, title_regex))
+	{
+		title_str = match[1].str();
+	}
+
+	// 2. Удаление нетекстовых тегов вместе с их содержимым (скрипты, стили)
+	html = std::regex_replace(html, std::regex(R"(<(script|style)\b[^>]*>([\s\S]*?)</\1>)", std::regex::icase), " ");
+
+	// 3. Выделение содержимого body (если body нет, берем весь текст)
+	std::regex body_regex(R"(<body[^>]*>([\s\S]*?)</body>)", std::regex::icase);
+	if (std::regex_search(html, match, body_regex))
+	{
+		html = match[1].str();
+	}
+
+	html = title_str + " " + html;
+
+	// 4. Удаление HTML-тегов (заменяем на пробел)
+	html = std::regex_replace(html, std::regex(R"(<[^>]*>)"), " ");
+
+	// 5. очистка от цифр и мусора
+	html = std::regex_replace(html, std::regex(R"(\d+)"), "");       // удаление цифр
+	html = std::regex_replace(html, std::regex(R"(\\u[0-9a-fA-F]{4})"), " "); // удаление \uXXXX сущностей
+		
+	// 6. Удаление спецсимволов заменяем на пробелы для изоляции латиницы)
+	html = std::regex_replace(html, std::regex(R"([.,:;@!~=%&#^|$?`/<>(){}\[\]"'*+_\-\\])"), " ");
+
+    // 7. Удаление кракозябр
+	html = std::regex_replace(html, std::regex(R"([^a-zA-Z\xD0\xD1\x80-\xBF\x40-\x7F]+)"), " ");
+	
+	// 8. убираем дубликаты, табы, переносы
+	html = std::regex_replace(html, std::regex(R"(\s+)"), " ");
+
+	// 9. Перевод в нижний регистр с учетом UTF-8
+	html = boost::locale::to_lower(html, loc);
+
+	return html;
+}
+
+// Получение новых слов для добавления их в БД
+std::map<std::string, unsigned int> Html_parser::new_words(const std::string& html_str, const std::string& current_url)
+{
+	std::map<std::string, unsigned int> words_html;
+    std::string word;
+    std::stringstream ss(html_str);
+	
+	while (ss >> word)
+    {
+
+
+		size_t str_len = 0;
+		for (auto it = word.begin(); it != word.end(); )
+		{
+			boost::locale::utf::code_point c = boost::locale::utf::utf_traits<char>::decode(it, word.end());
+			if (c != boost::locale::utf::illegal && c != boost::locale::utf::incomplete)
+			{
+				str_len++;
+			}
+			else
+			{
+				break; // Обнаружили битый или некорректный UTF-8 символ
+			}
+		}
+
+		if (str_len > min_word_length && str_len < max_word_length)   //в CP1251 1 байт = 1 символ
+		{
+			words_html[word]++;
+		}
+
+    }
+
+    return words_html;
+}
+
+Html_parser::Html_parser(unsigned int min_length, unsigned int max_length) : min_word_length(min_length), max_word_length(max_length)
+{
+
+}
+
+
+// Индексирование страницы (мой старый первый вариант только для слов кириллицы!!!)
+std::string html_index(const std::string& html_str)
 {
 	std::string html = html_str;
 
@@ -225,37 +314,4 @@ std::string Html_parser::html_index(const std::string& html_str)
 	html = boost::locale::to_lower(html, loc);   	        // Перевод в нижний регистр с учетом UTF-8
 
 	return html;
-}
-
-// Получение новых слов для добавления их в БД
-std::map<std::string, unsigned int> Html_parser::new_words(const std::string& html_str, const std::string& current_url)
-{
-	std::map<std::string, unsigned int> words_html;
-    std::string word;
-    std::stringstream ss(html_str);
-	
-	std::cout << " Слова, полученные c страницы " << current_url << std::endl;
-	std::cout << " ---------------------------------------------------- " << std::endl;
-    while (ss >> word)
-    {
-    	int str_len = word.size()/2;
-
-
-		// для кириллицы
-		if (std::regex_match(utf8_to_cp1251(word), std::regex(R"([а-яА-ЯёЁ]+)")))
-		{
-			if (str_len > min_word_length && str_len < max_word_length)
-			{
-				words_html[word]++;
-				std::cout <<"   "<< utf8_to_cp1251(word) << " (длина: " << str_len << ")" << std::endl;
-			}
-		}
-    }
-	std::cout<<std::endl;
-    return words_html;
-}
-
-Html_parser::Html_parser(unsigned int min_length, unsigned int max_length) : min_word_length(min_length), max_word_length(max_length)
-{
-
 }

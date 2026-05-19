@@ -12,5 +12,7 @@ user=postgres
 password=postgres
 
 [Search_settings]
-; число результатов поиска
+; настройки процесса поиска
 search_results = 10
+min_word_length = 3
+max_word_length = 32

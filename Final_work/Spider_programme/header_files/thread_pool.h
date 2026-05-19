@@ -50,7 +50,7 @@ public:
 	Thread_pool(size_t numThreads);
 	~Thread_pool();
 	void work();
-	std::future<void> submit(type_task task, std::string& url, int& url_depth);
+	std::future<void> submit(type_task task, std::string& url, int url_depth);
 };
 
 #endif // THREAD_POOL

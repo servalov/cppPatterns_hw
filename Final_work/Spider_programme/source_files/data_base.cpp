@@ -7,15 +7,15 @@ Data_base::Data_base(const std::string& db_connection_string) : connection_str{ 
 
 Data_base::~Data_base()
 {
-	if (conn) 
+	
+	/* if (conn)
 	{
 		if (conn->is_open())
 		{
 			conn->close();
 		}
 		delete conn;
-		std::cout << "\n Отключение БД!!!" << std::endl;
-	}
+	} */
 }
 
 // конструктор перемещения
@@ -28,8 +28,12 @@ Data_base::Data_base(Data_base&& other) noexcept
 // оператор перемещающего присваивания
 Data_base& Data_base::operator=(Data_base&& other) noexcept   
 {
-	conn = other.conn; 
-	other.conn = nullptr;
+	if (this != &other)
+	{
+		delete conn; // Защита от утечки памяти старого соединения
+		conn = other.conn;
+		other.conn = nullptr;
+	}
 	return *this;
 }
 
@@ -38,20 +42,30 @@ void Data_base::connect()
 	try
 	{
 		conn = new pqxx::connection(connection_str);
-		std::cout << "\n Осуществлено подключение к базе данных поискового робота Spider!!!" << std::endl;
+		std::cout << " 2. Осуществлено подключение к базе данных поискового робота Spider." << std::endl;
 	}
 	catch (const pqxx::broken_connection& e)
 	{
-		std::cerr << "Ошибка подключения: " << e.what() << std::endl;
+		std::cerr << "Ошибка подключения к базе данных поискового робота Spider: " << e.what() << std::endl;
+		conn = nullptr;
+		throw;
 	}
 	catch (const std::exception& e)
 	{
 		std::cerr << "Другая ошибка: " << e.what() << std::endl;
+		conn = nullptr;
+		throw;
 	}
 }
 
 void Data_base::CreateDBTable()
 {
+	if (conn == nullptr || !conn->is_open())
+	{
+		std::cerr << "  Ошибка: создание таблиц без подключения к БД!!!" << std::endl;
+		return;
+	}
+	
 	try
 	{
 		pqxx::work tx(*conn);
@@ -60,7 +74,7 @@ void Data_base::CreateDBTable()
 		tx.exec(
 			"CREATE TABLE IF NOT EXISTS DOCS ("
 			"id SERIAL PRIMARY KEY,"
-			"url VARCHAR(300) NOT NULL UNIQUE"
+			"url VARCHAR(1000) NOT NULL UNIQUE"
 			")"
 		);
 		
@@ -83,12 +97,13 @@ void Data_base::CreateDBTable()
 		);
 		
 		tx.commit();
-		std::cout << " Созданы таблицы документов и слов!!!" << std::endl << std::endl;
+		std::cout << " 3. В БД подготовлены таблицы url(документы) и words (слова поиска), промежуточные таблицы." << std::endl << std::endl;
 	}
 	catch (pqxx::sql_error e)
 	{
 		std::cout << e.what() << std::endl;
-		std::cout << "Ошибка создания таблиц БД!!!" << std::endl;
+		std::cout << "Ошибка подготовки и создания таблиц БД!!!" << std::endl;
+		return;
 	}
 }
 
@@ -119,10 +134,10 @@ bool Data_base::create_templates()
 // Метод добавление нового url в БД
 int Data_base::add_new_url(const std::string& url_name)
 {
-	if (conn == nullptr)
+	if (conn == nullptr || !conn->is_open())
 	{
-		std::cerr << "No database connection" << std::endl;
-		return false;
+		std::cerr << " Отсутствует подключение к БД!!!" << std::endl;
+		return -1;
 	}
 	
 	try
@@ -137,18 +152,17 @@ int Data_base::add_new_url(const std::string& url_name)
 	catch (const std::exception& ex)
 	{
 		std::cout << ex.what() << std::endl;
-		return false;
+		return -1;
 	}
-
 }
 
 // Метод добавление нового слова в БД
 int Data_base::add_new_word(const std::string& word_name)
 {
-	if (conn == nullptr)
+	if (conn == nullptr || !conn->is_open())
 	{
-		std::cerr << "No database connection" << std::endl;
-		return false;
+		std::cerr << " Отсутствует подключение к БД!!!" << std::endl;
+		return -1;
 	}
 
 	try
@@ -163,16 +177,16 @@ int Data_base::add_new_word(const std::string& word_name)
 	catch (const std::exception& ex)
 	{
 		std::cout << ex.what() << std::endl;
-		return false;
+		return -1;
 	}
 }
 
 // Метод добавление url и слова в промежуточную таюлицу БД
 void Data_base::add_new_url_word(int id_url,int id_word, int quantity)
 {
-	if (conn == nullptr)
+	if (conn == nullptr || !conn->is_open())
 	{
-		std::cerr << "No database connection" << std::endl;
+		std::cerr << " Отсутствует подключение к БД!!!" << std::endl;
 		return;
 	}
 	
@@ -193,10 +207,10 @@ void Data_base::add_new_url_word(int id_url,int id_word, int quantity)
 // Получение id_url из БД
 int Data_base::get_id_url(const std::string& url_name)
 {
-	if (conn == nullptr)
+	if (conn == nullptr || !conn->is_open())
 	{
-		std::cerr << "No database connection" << std::endl;
-		return false;
+		std::cerr << " Отсутствует подключение к БД!!!" << std::endl;
+		return -1;
 	}
 
 	try
@@ -219,10 +233,10 @@ int Data_base::get_id_url(const std::string& url_name)
 // Получение id_url из БД
 int Data_base::get_id_word(const std::string& word_name)
 {
-	if (conn == nullptr)
+	if (conn == nullptr || !conn->is_open())
 	{
-		std::cerr << "No database connection" << std::endl;
-		return false;
+		std::cerr << " Отсутствует подключение к БД!!!" << std::endl;
+		return -1;
 	}
 
 	try
@@ -240,7 +254,6 @@ int Data_base::get_id_word(const std::string& word_name)
 		//std::cout << ex.what() << std::endl;
 		return -1;
 	}
-
 }
 
 	

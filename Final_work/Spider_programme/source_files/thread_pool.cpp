@@ -10,7 +10,6 @@ template <class T> void Safe_queue<T>::push(T func)
 {
 	std::unique_lock<std::mutex> lk(mtx);
 	task_queue.emplace(std::move(func));
-	//std::cout << "\n В очередь добавлена новая задача!!!" << std::endl;
 	lk.unlock();
 	notice.notify_one();
 }
@@ -56,8 +55,8 @@ void Thread_pool::work()
 
 Thread_pool::~Thread_pool()
 {
-	std::this_thread::sleep_for(std::chrono::milliseconds(500));
-	//std::cout << "\n Удаление объекта thread_pool:" << std::endl;
+	std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	std::cout << " Завершение работы с объектом thread_pool (пул потоков):" << std::endl << std::endl;
 	tasks_queue.stop_threads();
 	for (size_t i{}; i < threads_vector.size(); ++i)
 	{
@@ -67,8 +66,7 @@ Thread_pool::~Thread_pool()
 
 Thread_pool::Thread_pool(size_t numThreads) : num_threads(numThreads)
 {
-	std::cout << "\n Создание объекта thread_pool (пул потоков)!!!" << std::endl;
-	std::cout << " Число рабочих потоков: " << num_threads << std::endl;
+	std::cout << " 1. Создан объект Tread_Pool(пул потоков)." << " Число рабочих потоков: " << num_threads << std::endl;
 	threads_vector.reserve(num_threads);
 
 	for (size_t i{}; i < num_threads; ++i)
@@ -77,7 +75,7 @@ Thread_pool::Thread_pool(size_t numThreads) : num_threads(numThreads)
 	}
 }
 
-std::future<void> Thread_pool::submit(type_task task, std::string& url, int& url_depth)
+std::future<void> Thread_pool::submit(type_task task, std::string& url, int url_depth)
 {
 	std::future<void> result = task.get_future();
 	tasks_queue.push({ std::move(task), url ,url_depth});
