@@ -12,11 +12,36 @@ find_package(OpenSSL REQUIRED)
 set(OPENSSL_USE_STATIC_LIBS TRUE)
 find_package(OpenSSL REQUIRED COMPONENTS Crypto)
 
-file(GLOB SOURCES "source_files/*.cpp") 
+#file(GLOB SOURCES "source_files/*.cpp")
+
+set(
+	SOURCE_FILES 
+	source_files/main.cpp
+	source_files/data_base.cpp
+	source_files/html_parser.cpp
+	source_files/http_client_async.cpp
+	source_files/http_client_async_ssl.cpp
+	source_files/ini_parser.cpp
+	source_files/spider.cpp
+	source_files/thread_pool.cpp 
+)
+
+set(
+	HEADER_FILES 
+	header_files/data_base.h
+	header_files/html_parser.h
+	header_files/http_client_async.h
+	header_files/http_client_async_ssl.h
+	header_files/ini_parser.h
+	header_files/spider.h
+	header_files/thread_pool.h
+)
+
+
 file(COPY config_ini_spider.txt cacert.pem DESTINATION ${CMAKE_BINARY_DIR})
 
 
-add_executable (${PROJECT_NAME} ${SOURCES})
+add_executable (${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
 
 target_compile_options(${PROJECT_NAME} PRIVATE /bigobj)
 
